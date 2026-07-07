@@ -115,7 +115,11 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text("Create Ticket")),
-      body: Padding(
+      // Dibungkus SingleChildScrollView supaya seluruh konten bisa
+      // di-scroll dan tidak overflow ketika ada elemen tambahan
+      // (misal nama file lampiran) yang membuat tinggi total
+      // melebihi layar.
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,6 +143,12 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             ),
 
             const SizedBox(height: 15),
+
+            const Text(
+              "Prioritas",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
 
             Container(
               width: double.infinity,
@@ -236,37 +246,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
               ),
             ),
 
-            const SizedBox(height: 15),
-
-            const Text(
-              "Prioritas",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-
-            DropdownButtonFormField<String>(
-              initialValue: priority,
-              dropdownColor: inputFill,
-              items: [
-                "Low",
-                "Medium",
-                "High",
-              ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-              onChanged: (value) {
-                setState(() {
-                  priority = value!;
-                });
-              },
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: inputFill,
-                border: borderStyle,
-                enabledBorder: borderStyle,
-                focusedBorder: borderStyle,
-              ),
-            ),
-
-            const Spacer(),
+            const SizedBox(height: 25),
 
             SizedBox(
               width: double.infinity,
@@ -290,6 +270,8 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                     : const Text("Submit Ticket"),
               ),
             ),
+
+            const SizedBox(height: 20),
           ],
         ),
       ),

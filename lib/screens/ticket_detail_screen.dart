@@ -43,7 +43,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   void initState() {
     super.initState();
     status = (widget.ticket["status"] ?? "open").toLowerCase();
-    assignedTo = widget.ticket["assigned_to"] ?? "-";
+    assignedTo = widget.ticket["assignedTo"] ?? "-";
   }
 
   @override
@@ -235,6 +235,44 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
             ),
             child: Text(widget.ticket["description"] ?? "Tidak ada deskripsi"),
           ),
+
+          // LAMPIRAN GAMBAR (kalau ada)
+          if ((widget.ticket["attachment_url"] ?? "").isNotEmpty) ...[
+            const SizedBox(height: 25),
+            const Text(
+              "Lampiran",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                widget.ticket["attachment_url"]!,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return Container(
+                    height: 180,
+                    alignment: Alignment.center,
+                    color: Theme.of(context).cardColor,
+                    child: const CircularProgressIndicator(strokeWidth: 2),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 120,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text('Gagal memuat gambar'),
+                  );
+                },
+              ),
+            ),
+          ],
 
           const SizedBox(height: 25),
 
