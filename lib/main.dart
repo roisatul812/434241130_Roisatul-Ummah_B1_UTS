@@ -1,9 +1,24 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'config/supabase_config.dart';
 import 'providers/theme_provider.dart';
-import 'screens/login_screen.dart';
+import 'screens/auth_gate.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Load file .env sebelum baca SupabaseConfig
+  await dotenv.load(fileName: ".env");
+
+  if (SupabaseConfig.isConfigured) {
+    await Supabase.initialize(
+      url: SupabaseConfig.url,
+      publishableKey: SupabaseConfig.anonKey,
+    );
+  }
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeProvider(),
@@ -16,7 +31,6 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
@@ -48,8 +62,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
 
-        bottomNavigationBarTheme:
-            const BottomNavigationBarThemeData(
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: Colors.white,
           selectedItemColor: Colors.black,
           unselectedItemColor: Colors.grey,
@@ -80,15 +93,14 @@ class MyApp extends StatelessWidget {
           ),
         ),
 
-        bottomNavigationBarTheme:
-            const BottomNavigationBarThemeData(
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: Colors.black,
           selectedItemColor: Colors.white,
           unselectedItemColor: Colors.grey,
         ),
       ),
 
-      home: const LoginScreen(),
+      home: const AuthGate(),
     );
   }
 }

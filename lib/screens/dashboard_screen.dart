@@ -1,121 +1,54 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/theme_provider.dart';
+import 'admin_users_screen.dart';
 import 'ticket_list_screen.dart';
 import 'create_ticket_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
-  final String role;
+import '../models/app_user.dart';
+import '../services/supabase_service.dart';
+import '../widgets/app_page_route.dart';
 
-  const DashboardScreen({super.key, required this.role});
+class DashboardScreen extends StatefulWidget {
+  final String role;
+  final String userId;
+
+  const DashboardScreen({super.key, required this.role, required this.userId});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Dashboard (${role.toUpperCase()})"),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Hello",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-            ),
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
 
-            const SizedBox(height: 20),
+class _DashboardScreenState extends State<DashboardScreen> {
+  late Future<Map<String, int>> _statsFuture;
 
-            Row(
-              children: [
-                Expanded(child: statCard(context, "Total", "12")),
-                const SizedBox(width: 10),
-                Expanded(child: statCard(context, "Open", "5")),
-              ],
-            ),
+  @override
+  void initState() {
+    super.initState();
+    _statsFuture = _loadStats();
+  }
 
-            const SizedBox(height: 10),
-
-            Row(
-              children: [
-                Expanded(child: statCard(context, "Progress", "4")),
-                const SizedBox(width: 10),
-                Expanded(child: statCard(context, "Done", "3")),
-              ],
-            ),
-
-            const SizedBox(height: 25),
-
-            Text(
-              "Menu",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            if (role == "admin") ...[
-              menuButton(context, "Manage Tiket", () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TicketListScreen(role: role),
-                  ),
-                );
-              }),
-              const SizedBox(height: 10),
-              menuButton(context, "Assign Tiket", () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        TicketListScreen(role: role),
-                  ),
-                );
-              }),
-            ] else ...[
-              menuButton(context, "List Tiket", () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TicketListScreen(role: role),
-                  ),
-                );
-              }),
-
-              const SizedBox(height: 10),
-
-              menuButton(context, "Create Tiket", () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CreateTicketScreen(),
-                  ),
-                );
-              }),
-            ],
-          ],
-        ),
+  /// Loads dashboard counts for the current role scope.
+  Future<Map<String, int>> _loadStats() {
+    return SupabaseService.countTicketsByStatus(
+      AppUser(
+        id: widget.userId,
+        name: '',
+        email: '',
+        role: UserRoleX.fromValue(widget.role),
       ),
     );
   }
 
-  Widget statCard(BuildContext context, String title, String value) {
+  /// Builds a metric card with a label and value.
+  Widget _statCard(BuildContext context, String title, int value) {
     return Card(
+      elevation: 3,
+      shadowColor: Colors.black26,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Text(
-              value,
+              value.toString(),
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
@@ -126,16 +59,15 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget menuButton(BuildContext context, String title, VoidCallback onTap) {
+  /// Builds a themed menu button.
+  Widget _menuButton(BuildContext context, String title, VoidCallback onTap) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: isDark
-              ? Colors.white.withOpacity(0.85)
-              : Colors.black.withOpacity(0.85),
+          backgroundColor: isDark ? Colors.white : Colors.black,
           foregroundColor: isDark ? Colors.black : Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
@@ -145,6 +77,183 @@ class DashboardScreen extends StatelessWidget {
         ),
         onPressed: onTap,
         child: Text(title),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Dashboard (${widget.role.toUpperCase()})")),
+      body: FutureBuilder<Map<String, int>>(
+        future: _statsFuture,
+        builder: (context, snapshot) {
+          final counts = snapshot.data ?? const <String, int>{};
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    height: 24,
+                    width: 130,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(child: _statCard(context, '...', 0)),
+                      const SizedBox(width: 10),
+                      Expanded(child: _statCard(context, '...', 0)),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(child: _statCard(context, '...', 0)),
+                      const SizedBox(width: 10),
+                      Expanded(child: _statCard(context, '...', 0)),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  _statCard(context, '...', 0),
+                ],
+              ),
+            );
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Hello",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _statCard(context, "Total", counts['total'] ?? 0),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _statCard(context, "Open", counts['open'] ?? 0),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 10),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _statCard(
+                        context,
+                        "Assign",
+                        counts['assigned'] ?? 0,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _statCard(
+                        context,
+                        "In Progress",
+                        counts['in_progress'] ?? 0,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 10),
+
+                _statCard(context, "Closed", counts['closed'] ?? 0),
+
+                const SizedBox(height: 25),
+
+                Text(
+                  "Menu",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                ),
+
+                const SizedBox(height: 15),
+
+                if (widget.role == "admin") ...[
+                  _menuButton(context, "Manage Tiket", () {
+                    Navigator.push(
+                      context,
+                      buildAppPageRoute(
+                        TicketListScreen(
+                          role: widget.role,
+                          userId: widget.userId,
+                        ),
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 10),
+                  _menuButton(context, "Assign Tiket", () {
+                    Navigator.push(
+                      context,
+                      buildAppPageRoute(
+                        TicketListScreen(
+                          role: widget.role,
+                          userId: widget.userId,
+                        ),
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 10),
+                  _menuButton(context, "Kelola User", () {
+                    Navigator.push(
+                      context,
+                      buildAppPageRoute(
+                        AdminUsersScreen(userId: widget.userId),
+                      ),
+                    );
+                  }),
+                ] else ...[
+                  _menuButton(context, "List Tiket", () {
+                    Navigator.push(
+                      context,
+                      buildAppPageRoute(
+                        TicketListScreen(
+                          role: widget.role,
+                          userId: widget.userId,
+                        ),
+                      ),
+                    );
+                  }),
+
+                  const SizedBox(height: 10),
+
+                  _menuButton(context, "Create Tiket", () {
+                    Navigator.push(
+                      context,
+                      buildAppPageRoute(const CreateTicketScreen()),
+                    );
+                  }),
+                ],
+              ],
+            ),
+          );
+        },
       ),
     );
   }
