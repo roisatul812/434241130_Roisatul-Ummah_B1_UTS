@@ -180,7 +180,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                 const SizedBox(height: 10),
 
-                _statCard(context, "Closed", counts['closed'] ?? 0),
+                // Dibungkus SizedBox lebar penuh supaya card "Closed"
+                // tidak shrink-wrap kecil, melainkan selebar card lainnya.
+                SizedBox(
+                  width: double.infinity,
+                  child: _statCard(
+                    context,
+                    "Closed",
+                    counts['closed'] ?? 0,
+                  ),
+                ),
 
                 const SizedBox(height: 25),
 
